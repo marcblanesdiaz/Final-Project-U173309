@@ -54,13 +54,37 @@ class House:
         - Create meaningful score categories
         - Handle missing quality_score values
         """
+        if self.quality_score is not NONE: 
+            return self.quality_score
+        
+        current_year = 2024
+        age_score = max(5 - (current_year - self.year_built) // 10, 1) #higher score for newest houses
+        size_score = min(self.area // 500, 5) # bigger houses score higher with a maximum of 5 points
+        bedroom_score = min(self.bedrooms, 5) #more bedrooms with a maximum of 5 points
 
+        overall_score = round((age_score + size_score + bedroom_score) / 3)
 
-
+        if overall_score >= 5:
+            self.quality_score = QualityScore.EXCELLENT
+        elif overall_score >= 4:
+            self.quality_score = QualityScore.GOOD
+        elif overall_score >= 3:
+            self.quality_score = QualityScore.AVERAGE
+        elif overall_score >= 2:
+            self.quality_score = QualityScore.FAIR
+        else:
+            self.quality_score = QualityScore.POOR
+            
 
     def sell_house(self) -> None:
         """
         Mark house as sold.
         
         Implementation tips:
-        - Update available status 
+        - Update available status"""
+        
+        if self.available:
+            self.available = False
+            print(f"House with ID {self.id} has been markes as sold.")
+        else:
+            print(f"House with ID {self.id} is already sold.")
