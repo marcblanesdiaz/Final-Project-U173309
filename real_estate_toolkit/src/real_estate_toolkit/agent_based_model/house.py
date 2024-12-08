@@ -54,7 +54,7 @@ class House:
         - Create meaningful score categories
         - Handle missing quality_score values
         """
-        if self.quality_score is not NONE: 
+        if self.quality_score is not None: 
             return self.quality_score
         
         current_year = 2024
@@ -85,6 +85,6 @@ class House:
         
         if self.available:
             self.available = False
-            print(f"House with ID {self.id} has been markes as sold.")
+            print(f"House with ID {self.id} has been marked as sold.")
         else:
-            print(f"House with ID {self.id} is already sold.")
+            print(f"House with ID {self.id} is availabe.")
