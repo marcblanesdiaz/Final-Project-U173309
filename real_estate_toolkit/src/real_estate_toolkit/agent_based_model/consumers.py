@@ -2,7 +2,7 @@ from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Optional, List, Dict
 from .house import House
-from .market import HousingMarket
+from .house_market import HousingMarket
 
 class Segment(Enum):
     FANCY = auto() # House is new construction and house score is the highest

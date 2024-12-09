@@ -5,7 +5,7 @@ import numpy as np
 @dataclass
 class Descriptor:
     """Class for cleaning real estate data."""
-    dataset: List[Dict[str, Any]]
+    data: List[Dict[str, Any]]
 
     def none_ratio(self, columns: List[str] = "all"):
         """Compute the ratio of None value per column.
@@ -14,14 +14,17 @@ class Descriptor:
         Return a dictionary with the key as the variable name and value as the ratio.
         """
         if columns == "all":
-            columns = list(self.dataset[0].keys())
-        else:
-            self.dataset(columns)
+            columns = list(self.data[0].keys())
+        """else: 
+            validate_columns(columns)
+            Poner if
+
+            """"
 
         none_ratios = {}
         for col in columns:
-            total = len(self.dataset)
-            none_count = sum(1 for row in self.dataset if row[col] is None)
+            total = len(self.data)
+            none_count = sum(1 for row in self.data if row[col] is None)
             none_ratios[col] = none_count / total if total > 0 else 0
         return none_ratios
     
@@ -32,9 +35,9 @@ class Descriptor:
         Return a dictionary with the key as the numeric variable name and value as the average
         """
         if columns == "all":
-            columns = [col for col in self.dataset[0].keys() if self._is_numeric(col)]
+            columns = [col for col in self.data[0].keys() if self._is_numeric(col)]
         else:
-            self.dataset(columns)
+            self.data(columns)
             columns = [col for col in columns if self._is_numeric(col)]
 
         if not columns:
@@ -42,7 +45,7 @@ class Descriptor:
 
         result = {}
         for col in columns:
-            values = [row[col] for row in self.dataset if row[col] is not None]
+            values = [row[col] for row in self.data if row[col] is not None]
             result[col] = sum(values) / len(values) if values else None
         return result
 
@@ -55,9 +58,9 @@ class Descriptor:
         Return a dictionary with the key as the numeric variable name and value as the average
         """
         if columns == "all":
-            columns = [col for col in self.dataset[0].keys() if self._is_numeric(col)]
+            columns = [col for col in self.data[0].keys() if self._is_numeric(col)]
         else:
-            self.dataset(columns)
+            self.data(columns)
             columns = [col for col in columns if self._is_numeric(col)]
 
         if not columns:
@@ -65,7 +68,7 @@ class Descriptor:
 
         result = {}
         for col in columns:
-            values = sorted(row[col] for row in self.dataset if row[col] is not None)
+            values = sorted(row[col] for row in self.data if row[col] is not None)
             result[col] = np.median(values) if values else None
         return result
 
@@ -87,20 +90,20 @@ class Descriptor:
     
 
 class DescriptorNumpy: 
-    dataset: List[Dict[str, Any]]
+    data: List[Dict[str, Any]]
 
     def _post_init_(self):
 
-        keys = list(self.dataset[0].keys())
+        keys = list(self.data[0].keys())
         dtype = [(key, '0') for key in keys()]
-        structured_data = [tuple(row.get(key, None) for key in keys) for row in self.dataset]
+        structured_data = [tuple(row.get(key, None) for key in keys) for row in self.data]
         self.array = np.array(structured_data, dtype=type)
 
     def none_ratio(self, columns: List[str] = "all") -> Dict[str, np.float64]:
         if columns == "all":
             columns = self.array.dtypes.names
         else:
-            self.dataset(columns)
+            self.data(columns)
 
         none_ratios = {}
         total_rows = len(self.array)
@@ -114,7 +117,7 @@ class DescriptorNumpy:
         if columns == "all":
             columns = [col for col in self.array.dtype.names if np.issubdtype(self.array[col].dtype, np.number)]
         else:
-            self.dataset(columns)
+            self.data(columns)
             columns = [col for col in columns if np.issubdtype(self.array[col].dtype, np.number)]
 
         if not columns:
@@ -131,7 +134,7 @@ class DescriptorNumpy:
         if columns == "all":
             columns = [col for col in self.array.dtype.names if np.issubdtype(self.array[col].dtype, np.number)]
         else:
-            self.dataset(columns)
+            self.data(columns)
             columns = [col for col in columns if np.issubdtype(self.array[col].dtype, np.number)]
 
         if not columns:
@@ -148,7 +151,7 @@ class DescriptorNumpy:
         if columns == "all":
             columns = [col for col in self.array.dtype.names if np.issubdtype(self.array[col].dtype, np.number)]
         else:
-            self.dataset(columns)
+            self.data(columns)
             columns = [col for col in columns if np.issubdtype(self.array[col].dtype, np.number)]
 
         if not columns:
@@ -165,7 +168,7 @@ class DescriptorNumpy:
         if columns == "all":
             columns = self.array.dtype.names
         else:
-            self.dataset(columns)
+            self.data(columns)
 
         type_and_modes = {}
         for col in columns:
