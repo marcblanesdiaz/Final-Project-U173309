@@ -1,5 +1,8 @@
 from typing import List, Dict, Optional
-from .house import House
+
+from .consumers import Segment
+from .house import House, QualityScore
+from numpy import mean
 
 class HousingMarket:
     def __init__(self, houses: List[House]):
@@ -16,8 +19,8 @@ class HousingMarket:
         for house in self.houses:
             if house.id == house_id:
                 return house
-            else: 
-                print(f"No house found with ID {house_id}.")
+        
+        raise Exception(f"No house found with ID {house_id}.")
 
     def calculate_average_price(self, bedrooms: Optional[int] = None) -> float:
         """
@@ -34,8 +37,7 @@ class HousingMarket:
             filtered_houses = [house.price for house in self.houses if house.available]
         
         if not filtered_houses:
-            print("No houses match the criteria for calculating the average price.")
-            return 0.0
+            raise Exception("No houses match the criteria for calculating the average price.")
         
         return round(mean(filtered_houses), 2)
     
@@ -54,18 +56,18 @@ class HousingMarket:
             if not house.available or house.price > max_price:
                 continue
             
-            if segment == "FANCY":
-                if house.is_new_construction() and house.quality_score == "EXCELLENT":
+            if segment == Segment.FANCY:
+                if house.is_new_construction() and house.quality_score == QualityScore.EXCELLENT:
                     matching_houses.append(house)
-            elif segment == "OPTIMIZER":
+            elif segment == Segment.OPTIMIZER:
                 price_per_sqft = house.calculate_price_per_square_foot()
                 if price_per_sqft <= max_price / house.area:
                     matching_houses.append(house)
-            elif segment == "AVERAGE":
-                matching_houses.append(house)
+            elif segment == Segment.AVERAGE:
+                if house.price < self.calculate_average_price():
+                    matching_houses.append(house)
 
-        if not matching_houses:
-            print(f"No houses found that meet the requirements for segment {segment} with max price {max_price}.")
-            return None
+        if len(matching_houses) == 0:
+            raise Exception(f"No houses found that meet the requirements for segment {segment} with max price {max_price}.")
 
         return matching_houses

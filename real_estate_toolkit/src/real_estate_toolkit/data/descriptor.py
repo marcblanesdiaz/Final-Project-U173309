@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any, Union
 import numpy as np
 
 @dataclass
@@ -19,7 +19,7 @@ class Descriptor:
             validate_columns(columns)
             Poner if
 
-            """"
+            """
 
         none_ratios = {}
         for col in columns:
@@ -89,15 +89,16 @@ class Descriptor:
         """
     
 
+@dataclass
 class DescriptorNumpy: 
     data: List[Dict[str, Any]]
 
-    def _post_init_(self):
+    """def _post_init_(self):
 
         keys = list(self.data[0].keys())
         dtype = [(key, '0') for key in keys()]
         structured_data = [tuple(row.get(key, None) for key in keys) for row in self.data]
-        self.array = np.array(structured_data, dtype=type)
+        self.array = np.array(structured_data, dtype=type)"""
 
     def none_ratio(self, columns: List[str] = "all") -> Dict[str, np.float64]:
         if columns == "all":

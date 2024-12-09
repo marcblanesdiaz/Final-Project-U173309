@@ -30,6 +30,10 @@ class House:
         """
         if self.area <= 0:
             raise ValueError("Area must be greater than zero to calculate price per square foot")
+        
+        elif self.price <= 0:
+            raise ValueError("Price cannot be lower or equal to zero to calculate price per square foot")
+
         else:
             price_per_square_foot = round(self.price / self.area, 2)
         
@@ -43,7 +47,11 @@ class House:
         - Compare current_year with year_built
         - Consider edge cases for very old houses
         """
+        if self.year_built > current_year:
+            raise Exception("Year built cannot be greater than current year")
+        
         return (current_year - self.year_built < 5)
+    
         
     def get_quality_score(self) -> None:
         """
@@ -56,6 +64,7 @@ class House:
         """
         if self.quality_score is not None: 
             return self.quality_score
+        
         
         current_year = 2024
         age_score = max(5 - (current_year - self.year_built) // 10, 1) #higher score for newest houses
@@ -87,4 +96,4 @@ class House:
             self.available = False
             print(f"House with ID {self.id} has been marked as sold.")
         else:
-            print(f"House with ID {self.id} is availabe.")
+            raise Exception(f"House with ID {self.id} is already sold.")

@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Optional, List, Dict
-from .house import House
+from .house import House, QualityScore
 from .house_market import HousingMarket
 
 class Segment(Enum):
@@ -34,7 +34,7 @@ class Consumer:
 
         for year in range(years):
             total_savings += annual_savings
-            total_savings *= (1+self.interest_rate)
+            total_savings *= (1 + self.interest_rate)
         
         self.savings = round(total_savings, 2)
 
@@ -56,9 +56,8 @@ class Consumer:
             house for house in available_houses if house.bedrooms >= self.children_number + 1
         ]
 
-        if not suitable_houses:
-            print(f"Consumer {self.id}: No houses meet the bedroom requirement.")
-            return
+
+        #TODO: Añadir filtro max price
 
         # Apply segment-specific preferences
         if self.segment == Segment.FANCY:
@@ -77,9 +76,8 @@ class Consumer:
                 house for house in suitable_houses if house.price <= average_price
             ]
 
-        if not suitable_houses:
-            print(f"Consumer {self.id}: No houses match segment preferences.")
-            return
 
+        if not suitable_houses:
+            raise Exception(f"Consumer {self.id}: No houses match segment preferences.")
 
 

@@ -72,6 +72,11 @@ real_estate_toolkit/
 ├── pyproject.toml
 ├── README.md
 ├── .venv/
+├── files
+|   ├── data_description.txt
+|   ├── sample_submission.csv
+|   ├── test.csv
+|   └── train.csv 
 └── src/
     └── real_estate_toolkit/
         ├── __init__.py
@@ -160,7 +165,7 @@ Implement the following files and their classes and the methods proposed applyin
 - **`src/real_estate_toolkit/data/cleaner.py`:**
     ```python
     from dataclasses import dataclass
-    from typing import Dict, List
+    from typing import Dict, List, Any
 
     @dataclass
     class Cleaner:
@@ -183,42 +188,42 @@ Implement the following files and their classes and the methods proposed applyin
 
     ```python
     from dataclasses import dataclass
-    from typing import Dict, List, Tuple
+    from typing import Dict, List, Tuple, Any, Union
 
     @dataclass
     class Descriptor:
         """Class for cleaning real estate data."""
         data: List[Dict[str, Any]]
 
-        def none_ratio(self, columns: List[str] = "all"):
+        def none_ratio(self, columns: Union[List[str], str] = "all"):
             """Compute the ratio of None value per column.
             If columns = "all" then compute for all.
             Validate that column names are correct. If not make an exception.
             Return a dictionary with the key as the variable name and value as the ratio.
             """
         
-        def average(self, columns: List[str] = "all") -> Dict[str, float]:
+        def average(self, columns: Union[List[str], str] = "all") -> Dict[str, float]:
             """Compute the average value for numeric variables. Omit None values.
             If columns = "all" then compute for all numeric ones.
             Validate that column names are correct and correspond to a numeric variable. If not make an exception.
             Return a dictionary with the key as the numeric variable name and value as the average
             """
         
-        def median(self, columns: List[str] = "all") -> Dict[str, float]:
+        def median(self, columns: Union[List[str], str] = "all") -> Dict[str, float]:
             """Compute the median value for numeric variables. Omit None values.
             If columns = "all" then compute for all numeric ones.
             Validate that column names are correct and correspond to a numeric variable. If not make an exception.
             Return a dictionary with the key as the numeric variable name and value as the average
             """
         
-        def percentile(self, columns: List[str] = "all", percentile: int = 50) -> Dict[str, float]:
+        def percentile(self, columns: Union[List[str], str] = "all", percentile: int = 50) -> Dict[str, float]:
             """Compute the percentile value for numeric variables. Omit None values.
             If columns = "all" then compute for all numeric ones.
             Validate that column names are correct and correspond to a numeric variable. If not make an exception.
             Return a dictionary with the key as the numeric variable name and value as the average
             """
         
-        def type_and_mode(self, columns: List[str] = "all") -> Dict[str, Union[Tuple[str, float], Tuple[str, str]]]:
+        def type_and_mode(self, columns: Union[List[str], str] = "all") -> Dict[str, Union[Tuple[str, float], Tuple[str, str]]]:
             """Compute the mode for variables. Omit None values.
             If columns = "all" then compute for all.
             Validate that column names are correct. If not make an exception.
@@ -254,7 +259,7 @@ This part of the project involves creating an agent-based model (ABM) to simulat
 - Practice working with random distributions and synthetic data generation
 
 ##### 3.1.3.1: Create a House Class
-In `house.py`, implement a `House` class. The `House` class represents individual properties in the market. The required properties are:
+In `houses.py`, implement a `House` class. The `House` class represents individual properties in the market. The required properties are:
 
 - `id`: Unique identifier for each house
 - `price`: Sale price of the house
@@ -267,7 +272,7 @@ In `house.py`, implement a `House` class. The `House` class represents individua
 ```python
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional, List, Dict
+from typing import Optional
 
 class QualityScore(Enum):
     EXCELLENT = 5
@@ -325,11 +330,11 @@ class House:
 ```
 
 ##### 3.1.3.2: Create Market Collection
-In `market.py`, implement a `HousingMarket` class. The `HousingMarket` class manages collections of houses and market-wide operations.
+In `house_market.py`, implement a `HousingMarket` class. The `HousingMarket` class manages collections of houses and market-wide operations.
 
 ```python
-from typing import List, Dict, Optional
-from .house import House
+from typing import List, Optional
+from .houses import House
 
 class HousingMarket:
     def __init__(self, houses: List[House]):
@@ -366,7 +371,7 @@ class HousingMarket:
 ```
 
 ##### 3.1.3.3: Create a Consumer Agent
-In `consumer.py`, implement a `Consumer` class. The `Consumer` class represents potential buyers in the market. The consumer segments are:
+In `consumers.py`, implement a `Consumer` class. The `Consumer` class represents potential buyers in the market. The consumer segments are:
 
 - `FANCY`: Prefers new construction with high quality scores
 - `OPTIMIZER`: Focuses on price per square foot value
@@ -377,7 +382,7 @@ The `saving_rate` corresponds to the amount of annual income reserved for saving
 ```python
 from enum import Enum, auto
 from dataclasses import dataclass
-from typing import Optional, List, Dict
+from typing import Optional
 from .house import House
 from .market import HousingMarket
 
@@ -430,10 +435,10 @@ In `simulation.py`, implement a `Simulation` class to generate Agent-Based Model
 from enum import Enum, auto
 from dataclasses import dataclass
 from random import gauss, randint
-from typing import Optional, List, Dict
-from .house import House
-from .market import HousingMarket
-from .consumer import Segment, Consumer
+from typing import List, Dict, Any
+from .houses import House
+from .house_market import HousingMarket
+from .consumers import Segment, Consumer
 
 class CleaningMarketMechanism(Enum):
     INCOME_ORDER_DESCENDANT = auto()
@@ -471,7 +476,6 @@ class Simulation:
         Implementation tips:
         - Convert raw data to House objects
         - Validate input data
-        - Use a for loop for create the List[Consumers] object needed to use the housing market.
         - Assign self.housing_market to the class.
         """
 
@@ -574,9 +578,10 @@ Create a new folder `src/real_estate_toolkit/analytics`. For graphs use an outpu
 Create a new module `src/real_estate_toolkit/analytics/exploratory.py` with the following requirements:
 
 ```python
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 import polars as pl
 import plotly.express as px
+import plotly.graph_objects as go
 
 
 class MarketAnalyzer:
@@ -830,4 +835,77 @@ class HousePricePredictor:
 
 ## 4. Evaluation via main.py
 
-I will use the main.py file in this repo. This main.py file should run without errors as the main file in your project. If it is not the case the project will be reviewed file by file; here the grade will be "more" subjective.
+### Overview
+The `main.py` file provided in the repository serves as a reference implementation and evaluation framework.
+
+### Purpose of main.py
+The main file demonstrates:
+* The expected interaction patterns between project components
+* Basic workflow implementation
+* Testing procedures for functionality verification
+* Integration of different modules
+* Expected input/output patterns
+
+### Flexibility in Implementation
+While maintaining core functionality, you can:
+
+#### Allowed Modifications
+* Adjust function signatures for better design
+* Add helper functions
+* Enhance error handling
+* Improve testing procedures
+* Modify variable names for clarity
+* Add documentation
+* Implement additional validation
+
+#### Guidelines
+* Preserve the basic testing objectives
+* Maintain core functionality described in requirements
+* Keep the general structure of component interactions
+* Ensure modifications align with project goals
+
+### Evaluation Process
+
+#### Primary Evaluation Path
+The first attempt at evaluation will use your implementation with the provided main file:
+* Testing overall project integration
+* Verifying component interactions
+* Assessing implementation completeness
+
+#### Alternative Evaluation Path
+If the main file execution encounters issues, evaluation proceeds through:
+* Individual function assessment
+* Component-level functionality review
+* Analysis of implemented solutions
+* Code quality evaluation
+* Documentation review
+
+### Important Considerations
+
+#### Focus Areas
+* Understanding core requirements
+* Implementing solutions
+* Providing clear documentation
+* Maintaining code quality
+* Demonstrating problem-solving ability
+
+#### Remember
+* The main file is a guideline, not a strict requirement
+* Your understanding and implementation are key
+* Creative solutions are welcome
+* Quality and functionality matter more than exact matching
+
+### Recommendations
+
+#### Development Approach
+1. Study the requirements thoroughly
+2. Implement components independently
+3. Test functions separately
+4. Document your implementation choices
+5. Integrate with main file where feasible
+6. Note any deviations from reference implementation
+
+#### Documentation
+* Comment your code appropriately
+* Explain significant modifications
+* Document known limitations

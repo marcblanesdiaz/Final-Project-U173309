@@ -1,16 +1,18 @@
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Union, Any
 
 @dataclass
 class Cleaner:
     """Class for cleaning real estate data."""
-    dataset: List[Dict[str, Any]]
+    data: List[Dict[str, Any]]
     
     def rename_with_best_practices(self) -> None:
         """Rename the columns with best practices (e.g. snake_case very descriptive name)."""
         column_mapping = {
+            "Id": "identification_code",
             "MSSubClass": "main_structure_sub_classification",
             "MSZoning": "main_structure_zoning",
+            "SalePrice": "sale_price",
             "LotFrontage": "lot_frontage",
             "LotArea": "lot_area",
             "Street": "street",
@@ -38,12 +40,15 @@ class Cleaner:
             "ExterQual": "exterior_quality",
             "ExterCond": "exterior_condition",
             "Foundation": "foundation",
+            "BsmtQual": "basement_quality",
+            "BsmtCond": "basement_condition",
             "BsmtExposure": "basement_exposure",
             "BsmtFinType1": "basement_finished_type_1",
             "BsmtFinSF1": "basement_finished_square_feet_1",
             "BsmtFinType2": "basement_finished_type_2",
             "BsmtFinSF2": "basement_finished_square_feet_2",
             "BsmtUnfSF": "basement_unfinished_square_feet",
+            "BedroomAbvGr": "bedroom_above_grade",
             "TotalBsmtSF": "total_basement_square_feet",
             "Heating": "heating",
             "HeatingQC": "heating_quality_and_condition",
@@ -61,6 +66,7 @@ class Cleaner:
             "Kitchen": "kitchen",
             "KitchenQual": "kitchen_quality",
             "TotRmsAbvGrd": "total_rooms_above_grade",
+            "KitchenAbvGr": "kitchen_above_grade",
             "Functional": "functional",
             "Fireplaces": "fireplaces",
             "FireplaceQu": "fireplace_quality",
@@ -88,13 +94,17 @@ class Cleaner:
             "SaleCondition": "sale_condition"
         }
         
-        self.dataset = self.dataset.rename(column_mapping)
+        self.data = [
+            {f"{column_mapping[key]}":value for key, value in row.items()}
+            for row in self.data
+        ]
+
 
     def na_to_none(self) -> List[Dict[str, Any]]:
         """Replace NA to None in all values with NA in the dictionary."""
-        for row in self.dataset:
+        for row in self.data:
             for key, value in row.items():
                 if value == "NA":
                     row [key] = None
         
-        return self.dataset
+        return self.data

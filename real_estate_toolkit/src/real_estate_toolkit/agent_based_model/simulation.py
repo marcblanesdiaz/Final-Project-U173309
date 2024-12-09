@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from dataclasses import dataclass
-from random import gauss, randint
-from typing import Optional, List, Dict
+from random import gauss, randint, shuffle
+from typing import Optional, List, Dict, Any
 from .house import House
 from .house_market import HousingMarket
 from .consumers import Segment, Consumer
@@ -47,13 +47,11 @@ class Simulation:
         """
         self.housing_market = HousingMarket([
             House(
-                id=house_data['id'],
-                price=house_data['price'],
-                area=house_data['area'],
-                bedrooms=house_data['bedrooms'],
-                year_built=house_data['year_built'],
-                quality_score=house_data['quality_score'],
-                available=house_data.get('available', True)
+                id=house_data['identification_code'],
+                price=house_data['sale_price'],
+                area=house_data['lot_area'],
+                bedrooms=house_data['bedroom'],
+                year_built=house_data['year_built']
             )
             for house_data in self.housing_market_data
         ])
@@ -75,6 +73,29 @@ class Simulation:
         - Assign segments appropriately
         """
 
+        self.consumers: List[Consumer] = []
+        for consumer_idx in range(self.consumers_number):
+            while True:
+                income = gauss(self.annual_income.average, self.annual_income.standard_deviation)
+                if self.annual_income.minimum <= income <= self.annual_income.maximum:
+                    break
+            
+            children = randint(self.children_range.minimum, self.children_range.maximum)
+
+            segment = Segment(randint(1, len(Segment)))
+        
+            self.consumers.append(
+                Consumer(
+                    id = consumer_idx,
+                    annual_income = income, 
+                    children_number = children, 
+                    segment = segment,
+                    house = None,
+                    savings = 0,
+                    saving_rate = self.saving_rate,
+                    interest_rate = self.interest_rate
+                )
+            )
     
     def compute_consumers_savings(self) -> None:
         """
@@ -84,6 +105,8 @@ class Simulation:
         - Apply saving rate consistently to all consumers.
         - Handle edge cases
         """
+        for consumer in self.consumers:
+            consumer.compute_savings(self.years)
 
     def clean_the_market(self) -> None:
         """
@@ -95,7 +118,22 @@ class Simulation:
         - Track successful purchases
         - Handle market clearing
         """
-    
+
+        if self.cleaning_market_mechanism == CleaningMarketMechanism.INCOME_ORDER_DESCENDANT:
+            self.consumers.sort(key=lambda consumer: consumer.annual_income, reverse=True)
+        elif self.cleaning_market_mechanism == CleaningMarketMechanism.INCOME_ORDER_ASCENDANT:
+            self.consumers.sort(key=lambda consumer: consumer.annual_income)
+        elif self.cleaning_market_mechanism == CleaningMarketMechanism.RANDOM:
+            shuffle(self.consumers)
+
+        for consumer in self.consumers:
+            try:
+                consumer.buy_a_house(self.housing_market)
+            except:
+                print("Market is cleared.")
+                break
+
+
     def compute_owners_population_rate(self) -> float:
         """
         Compute the owners population rate after the market is clean. 
@@ -103,6 +141,8 @@ class Simulation:
         Implementation tips:
         - Total consumers who bought a house over total consumers number
         """
+        owners = sum(1 for consumer in self.consumers if consumer.house is not None)
+        return round(owners / self.consumers_number, 2)
     
     def compute_houses_availability_rate(self) -> float:
         """
@@ -111,3 +151,7 @@ class Simulation:
         Implementation tips:
         - Houses available over total houses number
         """
+        available_houses = sum(1 for house in self.housing_market.houses if house.available)
+        total_houses = len(self.housing_market.houses)
+        return round(available_houses / total_houses, 2)
+
