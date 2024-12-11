@@ -49,33 +49,10 @@ class Consumer:
         - Match house to family size needs
         - Apply segment-specific preferences
         """
-        available_houses = [house for house in housing_market.houses if house.available]
+        #Assuming max price is equal to savings
+        available_houses = housing_market.get_houses_that_meet_requirements(self.savings, self.segment)
 
-        # Filter by family size (number of bedrooms needed)
-        suitable_houses = [
-            house for house in available_houses if house.bedrooms >= self.children_number + 1
-        ]
-
-
-        #TODO: Añadir filtro max price
-
-        # Apply segment-specific preferences
-        if self.segment == Segment.FANCY:
-            suitable_houses = [
-                house for house in suitable_houses
-                if house.is_new_construction() and house.quality_score == QualityScore.EXCELLENT
-            ]
-        elif self.segment == Segment.OPTIMIZER:
-            suitable_houses = [
-                house for house in suitable_houses
-                if house.calculate_price_per_square_foot() <= (self.annual_income / 12)
-            ]
-        elif self.segment == Segment.AVERAGE:
-            average_price = housing_market.calculate_average_price()
-            suitable_houses = [
-                house for house in suitable_houses if house.price <= average_price
-            ]
-
+        suitable_houses = [house for house in available_houses if house.bedrooms >= self.children_number + 1]
 
         if not suitable_houses:
             raise Exception(f"Consumer {self.id}: No houses match segment preferences.")
