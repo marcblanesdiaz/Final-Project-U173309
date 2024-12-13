@@ -57,7 +57,6 @@ class MarketAnalyzer:
             - Statistical insights dataframe
             - Save Plotly figures for price distribution in src/real_estate_toolkit/analytics/outputs/ folder.
         """
-        print("TEST 1")
          # Compute basic statistics using polar package
         price_stats = self.real_state_clean_data.select(
             pl.col("SalePrice").mean().alias("mean"),
@@ -66,7 +65,6 @@ class MarketAnalyzer:
             pl.col("SalePrice").min().alias("min"),
             pl.col("SalePrice").max().alias("max")
         )
-        print("TEST 2")
 
         # Create histogram using packaged imported and create a output with the image (using best practices naming)
         fig = px.histogram(
@@ -76,11 +74,7 @@ class MarketAnalyzer:
             labels={"SalePrice": "Frequenci"},
             nbins=50
         )
-        print("TEST 3")
-        fig.write_html("real_estate_toolkit/analytics/outputs/sale_price_distribution.html")
-        print("TEST 4")
         fig.write_image("real_estate_toolkit/analytics/outputs/sale_price_distribution.png")
-        print("TEST 5")
        
         return price_stats
 
@@ -101,7 +95,7 @@ class MarketAnalyzer:
             - Save Plotly figures for neighborhood price comparison in src/real_estate_toolkit/analytics/outputs/ folder.
         """
         # First we group by neighborhood and calculate statistics
-        neighborhood_stats = self.real_state_clean_data.groupby("Neighborhood").agg(
+        neighborhood_stats = self.real_state_clean_data.group_by("Neighborhood").agg(
             [
                 pl.col("SalePrice").median().alias("median_price"),
                 pl.col("SalePrice").mean().alias("mean_price"),
@@ -139,8 +133,10 @@ class MarketAnalyzer:
         """
         # Compute correlation matrix only with numerical varaibles
         numeric_cols = [col for col in self.real_state_clean_data.columns if self.real_state_clean_data[col].dtype in [pl.Int64, pl.Float64]]
+
+        variables = [var for var in variables if var in numeric_cols]
         
-        correlation_matrix = self.real_state_clean_data.select(numeric_cols).to_pandas().corr()
+        correlation_matrix = self.real_state_clean_data.select(variables).to_pandas().corr()
 
         # Create heatmap
         fig = px.imshow(

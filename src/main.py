@@ -311,20 +311,13 @@ def main():
     try:
         # Run all tests sequentially
         cleaned_data = test_data_loading_and_cleaning()
-        print("test 1")
-        #test_descriptive_statistics(cleaned_data)
-        print("test 2")
+        test_descriptive_statistics(cleaned_data)
         test_house_functionality()
-        print("test 3")
         market = test_market_functionality(cleaned_data)
-        print("test 4")
         test_consumer_functionality(market)
-        print("test 5")
         test_simulation(cleaned_data)
-        print("test 6")
         test_market_analyzer()
-        print("test 7")
-        #test_house_price_predictor()
+        test_house_price_predictor()
         print("All tests passed successfully!")
         return 0
     except AssertionError as e:

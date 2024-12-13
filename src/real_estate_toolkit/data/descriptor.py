@@ -100,17 +100,25 @@ class Descriptor:
                     raise Exception("Invalid column")
             if len(columns) != len([column for column in columns if isinstance(self.data[0][column], (int, float))]):
                 raise Exception("Some columns does not correspond to numeric variables")
-
-        result = {}
+    
+        percentiles = {}
         for col in columns:
             values = sorted([row[col] for row in self.data if row[col] is not None])
-            if values:
-                index = math.ceil(percentile / 100 * len(values))
-                result[col] = values[index]
+            n = len(values)
+            if n == 1:
+                percentiles[col] = float(values[0])
+                continue
+            i = (percentile / 100.0) * (n - 1)
+            lower = int(i)
+            upper = lower + 1
+    
+            if upper >= n:
+                p_value = float(values[-1])
             else:
-                result[col] = None
-
-        return result
+                fraction = i - lower
+                p_value = float(values[lower] + fraction * (values[upper] - values[lower]))
+            percentiles[col] = p_value
+        return percentiles
 
     
     def type_and_mode(self, columns: List[str] = "all") -> Dict[str, Union[Tuple[str, float], Tuple[str, str]]]:
@@ -145,96 +153,145 @@ class Descriptor:
     
 
 @dataclass
-class DescriptorNumpy: 
+class DescriptorNumpy:
     data: List[Dict[str, Any]]
-
-    def _init_(self, data):
-        self.data = data
+ 
+    def __post_init__(self):
+        # Asumimos que todas las filas tienen las mismas claves
+        # Si no fuera el caso, habría que normalizar.
         keys = list(self.data[0].keys())
-        dtype = [(key, '0') for key in keys()]
-        structured_data = [tuple(row.get(key, None) for key in keys) for row in self.data]
-        self.array = np.array(structured_data, dtype=type)
-
-    def none_ratio(self, columns: List[str] = "all") -> Dict[str, np.float64]:
+        # Creación de un dtype basado en objetos para flexibilidad
+        # Esto permite que las columnas tengan valores mixtos (None, str, float, etc.)
+        dtype = [(key, object) for key in keys]
+        # Construimos una lista de tuplas con el orden de las keys
+        structured_data = [
+            tuple(row.get(key, None) for key in keys) 
+            for row in self.data
+        ]
+ 
+        # Creamos el array estructurado
+        self.array = np.array(structured_data, dtype=dtype)
+ 
+    def _filter_columns(self, columns: Union[List[str], str]) -> List[str]:
+        """Filtra las columnas según el parámetro columns y verifica su existencia."""
         if columns == "all":
-            columns = self.array.dtypes.names
+            return list(self.array.dtype.names)
         else:
-            self.data(columns)
-
+            # Filtramos las columnas que existen en el array
+            valid_columns = [col for col in columns if col in self.array.dtype.names]
+            if not valid_columns:
+                raise ValueError("No se encontraron columnas válidas.")
+            return valid_columns
+ 
+    def none_ratio(self, columns: Union[List[str], str] = "all") -> Dict[str, float]:
+        """Calcula la proporción de valores None en las columnas seleccionadas."""
+        columns = self._filter_columns(columns)
         none_ratios = {}
         total_rows = len(self.array)
+        if total_rows == 0:
+            return {col: 0.0 for col in columns}
+ 
         for col in columns:
-            none_count = np.sum(self.array[col] == None)
-            none_ratios[col] = none_count / total_rows if total_rows > 0 else np.float64(0)
+            col_data = self.array[col]
+            # Contamos cuantos None hay
+            none_count = np.sum(col_data == None)
+            none_ratios[col] = none_count / total_rows
         return none_ratios
-
-    def average(self, columns: List[str] = "all") -> Dict[str, np.float64]:
-        """Compute the average value for numeric variables."""
-        if columns == "all":
-            columns = [col for col in self.array.dtype.names if np.issubdtype(self.array[col].dtype, np.number)]
-        else:
-            self.data(columns)
-            columns = [col for col in columns if np.issubdtype(self.array[col].dtype, np.number)]
-
-        if not columns:
-            raise ValueError("No numeric columns specified.")
-        
+ 
+    def _get_numeric_columns(self, columns: List[str]) -> List[str]:
+        """Devuelve sólo las columnas numéricas de la lista proporcionada."""
+        numeric_cols = []
+        for col in columns:
+            # Intentamos convertir la columna a float ignorando None
+            col_data = self.array[col]
+            # Filtramos None
+            filtered = [x for x in col_data if x is not None]
+            if not filtered:
+                # Columna vacía después de filtrar None
+                continue
+            # Probamos conversión a float
+            try:
+                _ = np.array(filtered, dtype=float)
+                numeric_cols.append(col)
+            except ValueError:
+                # Si no se puede convertir a numérico, ignoramos esta columna
+                pass
+        return numeric_cols
+ 
+    def average(self, columns: Union[List[str], str] = "all") -> Dict[str, float]:
+        """Computa el valor promedio para columnas numéricas."""
+        all_cols = self._filter_columns(columns)
+        numeric_cols = self._get_numeric_columns(all_cols)
+ 
+        if not numeric_cols:
+            raise ValueError("No se especificaron columnas numéricas válidas.")
         averages = {}
-        for col in columns:
-            values = self.array[col][self.array[col] != None]
-            averages[col] = np.mean(values) if len(values) > 0 else np.nan
+        for col in numeric_cols:
+            col_data = self.array[col]
+            filtered = [x for x in col_data if x is not None]
+            if len(filtered) > 0:
+                filtered_arr = np.array(filtered, dtype=float)
+                averages[col] = float(np.mean(filtered_arr))
+            else:
+                averages[col] = np.nan
         return averages
-
-    def median(self, columns: List[str] = "all") -> Dict[str, np.float64]:
-        """Compute the median value for numeric variables."""
-        if columns == "all":
-            columns = [col for col in self.array.dtype.names if np.issubdtype(self.array[col].dtype, np.number)]
-        else:
-            self.data(columns)
-            columns = [col for col in columns if np.issubdtype(self.array[col].dtype, np.number)]
-
-        if not columns:
-            raise ValueError("No numeric columns specified.")
-        
+ 
+    def median(self, columns: Union[List[str], str] = "all") -> Dict[str, float]:
+        """Computa la mediana para columnas numéricas."""
+        all_cols = self._filter_columns(columns)
+        numeric_cols = self._get_numeric_columns(all_cols)
+ 
+        if not numeric_cols:
+            raise ValueError("No se especificaron columnas numéricas válidas.")
         medians = {}
-        for col in columns:
-            values = self.array[col][self.array[col] != None]
-            medians[col] = np.median(values) if len(values) > 0 else np.nan
+        for col in numeric_cols:
+            col_data = self.array[col]
+            filtered = [x for x in col_data if x is not None]
+            if filtered:
+                filtered_arr = np.array(filtered, dtype=float)
+                medians[col] = float(np.median(filtered_arr))
+            else:
+                medians[col] = np.nan
         return medians
-
-    def percentile(self, columns: List[str] = "all", percentile: int = 50) -> Dict[str, np.float64]:
-        """Compute a specific percentile for numeric variables."""
-        if columns == "all":
-            columns = [col for col in self.array.dtype.names if np.issubdtype(self.array[col].dtype, np.number)]
-        else:
-            self.data(columns)
-            columns = [col for col in columns if np.issubdtype(self.array[col].dtype, np.number)]
-
-        if not columns:
-            raise ValueError("No numeric columns specified.")
-
+ 
+    def percentile(self, columns: Union[List[str], str] = "all", percentile: float = 50.0) -> Dict[str, float]:
+        """Computa un percentil específico para columnas numéricas."""
+        all_cols = self._filter_columns(columns)
+        numeric_cols = self._get_numeric_columns(all_cols)
+ 
+        if not numeric_cols:
+            raise ValueError("No se especificaron columnas numéricas válidas.")
         percentiles = {}
-        for col in columns:
-            values = self.array[col][self.array[col] != None] 
-            percentiles[col] = np.percentile(values, percentile) if len(values) > 0 else np.nan
+        for col in numeric_cols:
+            col_data = self.array[col]
+            filtered = [x for x in col_data if x is not None]
+            if filtered:
+                filtered_arr = np.array(filtered, dtype=float)
+                percentiles[col] = float(np.percentile(filtered_arr, percentile))
+            else:
+                percentiles[col] = np.nan
         return percentiles
-
-    def type_and_mode(self, columns: List[str] = "all") -> Dict[str, Tuple[str, Any]]:
-        """Compute the mode and type for variables."""
-        if columns == "all":
-            columns = self.array.dtype.names
-        else:
-            self.data(columns)
-
+ 
+    def type_and_mode(self, columns: Union[List[str], str] = "all") -> Dict[str, Tuple[str, Any]]:
+        """Determina el tipo y la moda para las columnas."""
+        columns = self._filter_columns(columns)
         type_and_modes = {}
         for col in columns:
-            values = self.array[col][self.array[col] != None]  
-            if len(values) == 0:
+            col_data = self.array[col]
+            filtered = [x for x in col_data if x is not None]
+ 
+            # Determinamos el tipo predominante mirando el dtype del array estructurado.
+            # Como es object, el tipo no está claro. Intentamos inferir del primer valor filtrado.
+            if not filtered:
+                # Sin datos
                 type_and_modes[col] = ("unknown", None)
                 continue
-
-            variable_type = str(self.array[col].dtype)
-            most_common = np.unique(values, return_counts=True)
-            mode = most_common[0][np.argmax(most_common[1])]
-            type_and_modes[col] = (variable_type, mode)
+            # Inferir tipo:
+            sample = filtered[0]
+            var_type = type(sample).__name__
+ 
+            # Moda:
+            unique_vals, counts = np.unique(filtered, return_counts=True)
+            mode = unique_vals[np.argmax(counts)]
+            type_and_modes[col] = (var_type, mode)
         return type_and_modes

@@ -131,7 +131,6 @@ class Simulation:
             try:
                 consumer.buy_a_house(self.housing_market)
             except:
-                print("Market is cleared.")
                 break
 
 
