@@ -148,7 +148,8 @@ class Descriptor:
 class DescriptorNumpy: 
     data: List[Dict[str, Any]]
 
-    def _post_init_(self):
+    def _init_(self, data):
+        self.data = data
         keys = list(self.data[0].keys())
         dtype = [(key, '0') for key in keys()]
         structured_data = [tuple(row.get(key, None) for key in keys) for row in self.data]

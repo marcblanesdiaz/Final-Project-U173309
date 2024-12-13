@@ -1,7 +1,5 @@
-from typing import List, Dict, Optional
-
-from .consumers import Segment
-from .house import House, QualityScore
+from typing import List, Optional
+from .houses import House, QualityScore
 from numpy import mean
 
 class HousingMarket:
@@ -39,7 +37,7 @@ class HousingMarket:
         if not filtered_houses:
             raise Exception("No houses match the criteria for calculating the average price.")
         
-        return round(mean(filtered_houses), 2)
+        return mean(filtered_houses)
     
     def get_houses_that_meet_requirements(self, max_price: int, segment: str) -> Optional[List[House]]:
         """
@@ -50,6 +48,7 @@ class HousingMarket:
         - Implement efficient filtering
         - Handle case when no houses match
         """
+        from .consumers import Segment
         matching_houses = []
 
         for house in self.houses:

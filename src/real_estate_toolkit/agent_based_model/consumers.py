@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from dataclasses import dataclass
-from typing import Optional, List, Dict
-from .house import House, QualityScore
+from typing import Optional
+from .houses import House
 from .house_market import HousingMarket
 
 class Segment(Enum):
@@ -55,6 +55,8 @@ class Consumer:
         suitable_houses = [house for house in available_houses if house.bedrooms >= self.children_number + 1]
 
         if not suitable_houses:
-            raise Exception(f"Consumer {self.id}: No houses match segment preferences.")
+            return None
+        
+        self.house = suitable_houses[0]
 
 

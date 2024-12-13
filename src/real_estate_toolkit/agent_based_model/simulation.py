@@ -1,8 +1,8 @@
 from enum import Enum, auto
 from dataclasses import dataclass
 from random import gauss, randint, shuffle
-from typing import Optional, List, Dict, Any
-from .house import House
+from typing import List, Dict, Any
+from .houses import House
 from .house_market import HousingMarket
 from .consumers import Segment, Consumer
 
@@ -47,11 +47,12 @@ class Simulation:
         """
         self.housing_market = HousingMarket([
             House(
-                id=house_data['identification_code'],
+                id=house_data['id'],
                 price=house_data['sale_price'],
                 area=house_data['lot_area'],
-                bedrooms=house_data['bedroom'],
-                year_built=house_data['year_built']
+                bedrooms=house_data['bedroom_abv_gr'],
+                year_built=house_data['year_built'],
+                quality_score=house_data["overall_qual"]
             )
             for house_data in self.housing_market_data
         ])
